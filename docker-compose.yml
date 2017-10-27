@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  todonotificationjob:
+    image: todonotificationjob
+    build:
+      context: .
+      dockerfile: Dockerfile

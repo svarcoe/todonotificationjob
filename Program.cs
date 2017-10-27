@@ -35,8 +35,7 @@ namespace TodoScheduledJob
                 .CreateLogger<Program>();
             logger.LogDebug("Starting application");
 
-            logger.LogDebug("application ending.");
-
+            logger.LogDebug("Application ending.");
             Thread.Sleep(1000);
         }
     }
