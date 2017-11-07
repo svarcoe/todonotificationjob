@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Paramore.Darker;
 using Paramore.Darker.AspNetCore;
+using Paramore.Darker.Builder;
 using Paramore.Darker.Policies;
 using Paramore.Darker.QueryLogging;
 using Polly;
@@ -44,10 +47,20 @@ namespace TodoScheduledJob
 
             ILogger logger = serviceProvider.GetService<ILoggerFactory>()
                 .CreateLogger<Program>();
+
+            var registry = new QueryHandlerRegistry();
+            registry.Register<GetTasksQuery, IReadOnlyDictionary<string, TodoModel>, GetTasksQueryHandler>();
+
+            IQueryProcessor queryProcessor = serviceProvider.GetService<IQueryProcessor>();
             logger.LogDebug("Starting application");
-            
-            logger.LogDebug("Application ending.");
-            Thread.Sleep(1000);
+            var tasks = queryProcessor.ExecuteAsync(new GetTasksQuery()).Result;
+            foreach (var item in tasks)
+            {
+                Console.WriteLine($"{item.Value.Title}, assigned to: {item.Value.AssignedUserName}");
+            }
+            Console.WriteLine("Press Enter to exit...");
+            Console.ReadLine();
+            logger.LogDebug("Application ending.");            
         }
 
         private static IPolicyRegistry ConfigurePolicies()
