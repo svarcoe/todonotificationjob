@@ -4,6 +4,10 @@ using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Paramore.Darker.AspNetCore;
+using Paramore.Darker.Policies;
+using Paramore.Darker.QueryLogging;
+using Polly;
 
 namespace TodoScheduledJob
 {
@@ -20,11 +24,18 @@ namespace TodoScheduledJob
             Configuration = configurationBuilder.Build();
 
             //setup our DI
-            IServiceProvider serviceProvider = new ServiceCollection()
+            IServiceCollection services = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton(new LoggerFactory().AddConsole())
-                .AddSingleton<ITodoRepository, TodoRepository>()
-                .BuildServiceProvider();
+                .AddSingleton<ITodoRepository, TodoRepository>();
+            
+            services
+                .AddDarker()
+                .AddHandlersFromAssemblies(typeof(Program).Assembly)
+                .AddJsonQueryLogging()
+                .AddPolicies(ConfigurePolicies());
+            
+            IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             //configure console logging
             serviceProvider
@@ -34,9 +45,31 @@ namespace TodoScheduledJob
             ILogger logger = serviceProvider.GetService<ILoggerFactory>()
                 .CreateLogger<Program>();
             logger.LogDebug("Starting application");
-
+            
             logger.LogDebug("Application ending.");
             Thread.Sleep(1000);
+        }
+
+        private static IPolicyRegistry ConfigurePolicies()
+        {
+            var defaultRetryPolicy = Policy
+                .Handle<Exception>()
+                .WaitAndRetryAsync(new[]
+                {
+                    TimeSpan.FromMilliseconds(50),
+                    TimeSpan.FromMilliseconds(100),
+                    TimeSpan.FromMilliseconds(150)
+                });
+
+            var circuitBreakerPolicy = Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(1, TimeSpan.FromMilliseconds(500));
+
+            return new PolicyRegistry
+            {
+                { Paramore.Darker.Policies.Constants.RetryPolicyName, defaultRetryPolicy },
+                { Paramore.Darker.Policies.Constants.CircuitBreakerPolicyName, circuitBreakerPolicy }
+            };
         }
     }
 }

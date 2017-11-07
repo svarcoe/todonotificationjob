@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class TodoRepository : ITodoRepository {
 
@@ -12,11 +15,6 @@ public class TodoRepository : ITodoRepository {
         throw new System.NotImplementedException();
     }
 
-    public List<TodoModel> GetAll()
-    {
-        throw new System.NotImplementedException();
-    }
-
     public TodoModel GetById(string id)
     {
         throw new System.NotImplementedException();
@@ -25,6 +23,11 @@ public class TodoRepository : ITodoRepository {
     public TodoModel Update(TodoModel model)
     {
         throw new System.NotImplementedException();
+    }
+
+    public Task<IReadOnlyDictionary<int, TodoModel>> GetAll(CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 }
 
